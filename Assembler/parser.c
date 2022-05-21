@@ -32,6 +32,14 @@ short parseOperand(char *buffer, short operandType) {
 		}
 		if (operand < 0) operand = operand & 0x001F;
 		operand = operand | 0x20;	//Set bit 5 of the instruction
+	} else if (buffer[0] >= '0' && buffer[0] <= '9' && operandType == OPERAND_TWO) {
+		operand = stringToShort(buffer, '#');
+		if (operand > 15 || operand < -16) {
+			//printf("Error: An incorrect number is used for a register on line %d!\nAbort!\n", line_number);
+			return -1;
+		}
+		if (operand < 0) operand = operand & 0x001F;
+		operand = operand | 0x20;	//Set bit 5 of the instruction
 	} else {
 		switch (operandType) {
 			case DR:
@@ -65,8 +73,8 @@ short parsePCOffset(char *buffer, short PC, short offsetLength) {
 			return -1;
 		}
 		offset = symentry->address;
+		offset -= PC;
 	}
-	offset -= PC;
 	if (offsetLength == 9 && (offset > 255 || offset < -256)) {
 	} else if (offsetLength == 11 && (offset > 1023 || offset < -1024)) {
 	}

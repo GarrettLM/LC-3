@@ -6,18 +6,16 @@
 #include "opcodetable.h"
 #include "parser.h"
 
-unsigned short address;
-
 char *token;
-unsigned short location_counter;
-unsigned short instruction;
+uint16_t location_counter;
+uint16_t instruction;
 FILE *fout;
 char *asmfilename, *objfilename, *symfilename;
 
 //This function is used to output words to the object file
 int writeWord(uint16_t word) {
 	//Words are output in little endian format for compatibility with other LC-3 simulators
-	//word = (word << 8) | (word >> 8);
+	word = (word << 8) | (word >> 8);
 	return fwrite(&word, sizeof(word), 1, fout);
 }
 
@@ -64,7 +62,7 @@ int main(int argc, char *argv[]) {
 	printf("Starting program\n");
 	proc_args(argc, argv);
 
-	address = 0x3000;
+	location_counter = 0x3000;
 
 	set_input_stream(asmfilename);
 
@@ -78,14 +76,12 @@ int main(int argc, char *argv[]) {
 	free(token);
 
 	next_token(&token);
-	if (token[0] == '#') address = stringToShort(token+1, '#');
-	else if (token[0] == 'x' || token[0] == 'X') address = stringToShort(token+1, 'x');
+	if (token[0] == '#') location_counter = stringToShort(token+1, '#');
+	else if (token[0] == 'x' || token[0] == 'X') location_counter = stringToShort(token+1, 'x');
 	else {
 		printf("Error: .ORIG address not formatted properly!\nAbort!\n");
 		exit(1);
 	}
-
-	location_counter = address;
 	free(token);
 
 	while (1) {
@@ -167,15 +163,14 @@ int main(int argc, char *argv[]) {
 	free(token);
 
 	next_token(&token);
-	if (token[0] == '#') address = stringToShort(token+1, '#');
-	else if (token[0] == 'x' || token[0] == 'X') address = stringToShort(token+1, 'x');
+	if (token[0] == '#') location_counter = stringToShort(token+1, '#');
+	else if (token[0] == 'x' || token[0] == 'X') location_counter = stringToShort(token+1, 'x');
 	else {
 		printf("Error: .ORIG address not formatted properly!\nAbort!\n");
 		exit(1);
 	}
 
-	location_counter = address;
-	writeWord(address);
+	writeWord(location_counter);
 	free(token);
 
 	while (1) {
