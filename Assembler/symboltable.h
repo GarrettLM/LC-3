@@ -11,8 +11,8 @@ struct symboltableentry {
 
 typedef struct symboltableentry ste;
 
-ste *findTableEntry(char *symbol);
-int addTableEntry(char *symbol, uint16_t address);
-int print_symbol_table(char *symfilename);
+ste *search_symtable(char *symbol);
+int add_sym_entry(char *symbol, uint16_t address);
+int print_symtable(char *symfilename);
 
 #endif

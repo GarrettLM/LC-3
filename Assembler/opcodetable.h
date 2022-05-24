@@ -5,7 +5,7 @@
 struct optableentry {
   char *mnem;
   uint16_t opcode;
-  uint16_t arguments;
+  uint16_t arguments;	// The number of operands the opcode takes
   int (*parseFunc)(uint16_t *instruction, uint16_t lc);
 };
 

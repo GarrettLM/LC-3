@@ -8,8 +8,8 @@
 static char *token;
 
 // Used for parsing the DR, SR1, and SR2/imm5
-short parseOperand(char *buffer, short operandType) {
-	short operand = 0;
+uint16_t parse_operand(char *buffer, short operandType) {
+	uint16_t operand = 0;
 	if (buffer[0] == 'R' || buffer[0] == 'r') {
 		operand = stringToShort(buffer+1, '#');
 		if (operand > 7 || operand < 0) {
@@ -60,14 +60,14 @@ short parseOperand(char *buffer, short operandType) {
 	return operand;
 }
 
-short parsePCOffset(char *buffer, short PC, short offsetLength) {
-	short offset = 0;
+uint16_t parse_PCoffset(char *buffer, uint16_t PC, short offsetLength) {
+	uint16_t offset = 0;
 	if (buffer[0] == '#') {
 		offset = stringToShort(buffer+1, '#');
 	} else if (buffer[0] == 'x' || buffer[0] == 'X') {
 		offset = stringToShort(buffer+1, 'x');
 	} else {
-		ste *symentry = findTableEntry(buffer);
+		ste *symentry = search_symtable(buffer);
 		if (symentry == NULL) {
 			printf("Error: Could not find label %s in symbol table!\nAbort!\n", buffer);
 			return -1;
@@ -85,8 +85,8 @@ short parsePCOffset(char *buffer, short PC, short offsetLength) {
 	return offset;
 }
 
-short parseROffset(char *buffer) {
-	short offset = 0;
+uint16_t parse_Roffset(char *buffer) {
+	uint16_t offset = 0;
 	if (buffer[0] == '#') {
 		offset = stringToShort(buffer+1, '#');
 	} else if (buffer[0] == 'x' || buffer[0] == 'X') {
@@ -131,136 +131,136 @@ short stringToShort(char *str, char mode) {
 	return result;
 }
 
-int parseAdd(uint16_t *instruction, uint16_t lc) {
+int parseADD(uint16_t *instruction, uint16_t lc) {
 	//Parse the destination register
 	next_token(&token);
-	short dr = parseOperand(token, DR);
+	short dr = parse_operand(token, DR);
 	if (dr == -1) return 1;
 	*instruction = *instruction | dr;
 
 	//Parse the first operand (source register one)
 	free(token);
 	next_token(&token);
-	short operandOne = parseOperand(token, SRONE);
+	short operandOne = parse_operand(token, SRONE);
 	if (operandOne == -1) return 1;
 	*instruction = *instruction | operandOne;
 
 	//Parse the second operand
 	free(token);
 	next_token(&token);
-	short operandTwo = parseOperand(token, OPERAND_TWO);
+	short operandTwo = parse_operand(token, OPERAND_TWO);
 	if (operandTwo == -1) return 1;
 	*instruction = *instruction | operandTwo;
 	free(token);
 	return 0;
 }
 
-int parseAnd(uint16_t *instruction, uint16_t lc) {
+int parseAND(uint16_t *instruction, uint16_t lc) {
 	//Parse the destination register
 	next_token(&token);
-	short dr = parseOperand(token, DR);
+	short dr = parse_operand(token, DR);
 	if (dr == -1) return 1;
 	*instruction = *instruction | dr;
 
 	//Parse the first operand (source register one)
 	free(token);
 	next_token(&token);
-	short operandOne = parseOperand(token, SRONE);
+	short operandOne = parse_operand(token, SRONE);
 	if (operandOne == -1) return 1;
 	*instruction = *instruction | operandOne;
 
 	//Parse the second operand
 	free(token);
 	next_token(&token);
-	short operandTwo = parseOperand(token, OPERAND_TWO);
+	short operandTwo = parse_operand(token, OPERAND_TWO);
 	if (operandTwo == -1) return 1;
 	*instruction = *instruction | operandTwo;
 	free(token);
 	return 0;
 }
 
-int parseBr(uint16_t *instruction, uint16_t lc) {
+int parseBR(uint16_t *instruction, uint16_t lc) {
 	//Find next token
 	next_token(&token);
-	short offset = parsePCOffset(token, lc+1, 9);
+	short offset = parse_PCoffset(token, lc+1, 9);
 	if (offset == -1) return 1;
 	*instruction = *instruction | offset;
 	free(token);
 	return 0;
 }
 
-int parseJmp(uint16_t *instruction, uint16_t lc) {
+int parseJMP(uint16_t *instruction, uint16_t lc) {
 	//Parse the base register
 	next_token(&token);
-	short baseRegister = parseOperand(token, SRONE);
+	short baseRegister = parse_operand(token, SRONE);
 	if (baseRegister == -1) return 1;
 	*instruction = *instruction | baseRegister;
 	free(token);
 	return 0;
 }
 
-int parseJsr(uint16_t *instruction, uint16_t lc) {
+int parseJSR(uint16_t *instruction, uint16_t lc) {
 	//Parse the offset
 	next_token(&token);
-	short offset = parsePCOffset(token, lc+1, 11);
+	short offset = parse_PCoffset(token, lc+1, 11);
 	*instruction = *instruction | offset;
 	free(token);
 	return 0;
 }
 
-int parseJsrr(uint16_t *instruction, uint16_t lc) {
+int parseJSRR(uint16_t *instruction, uint16_t lc) {
 	//Parse the base register
 	next_token(&token);
-	short baseRegister = parseOperand(token, SRONE);
+	short baseRegister = parse_operand(token, SRONE);
 	if (baseRegister == -1) return 1;
 	*instruction = *instruction | baseRegister;
 	free(token);
 	return 0;
 }
 
-int parseLd(uint16_t *instruction, uint16_t lc) {
+int parseLD(uint16_t *instruction, uint16_t lc) {
 	//Parse the destination register
 	next_token(&token);
-	short dr = parseOperand(token, DR);
+	short dr = parse_operand(token, DR);
 	if (dr == -1) return 1;
 	*instruction = *instruction | dr;
 
 	//Parse the offset
 	free(token);
 	next_token(&token);
-	short offset = parsePCOffset(token, lc+1, 9);
+	short offset = parse_PCoffset(token, lc+1, 9);
 	*instruction = *instruction | offset;
 	free(token);
 	return 0;
 }
 
-int parseLdi(uint16_t *instruction, uint16_t lc) {
+int parseLDI(uint16_t *instruction, uint16_t lc) {
 	//Parse the destination register
 	next_token(&token);
-	short dr = parseOperand(token, DR);
+	short dr = parse_operand(token, DR);
 	if (dr == -1) return 1;
 	*instruction = *instruction | dr;
 	free(token);
 
 	//Parse the offset
 	next_token(&token);
-	short offset = parsePCOffset(token, lc+1, 9);
+	short offset = parse_PCoffset(token, lc+1, 9);
 	*instruction = *instruction | offset;
 	free(token);
 	return 0;
 }
 
-int parseLdr(uint16_t *instruction, uint16_t lc) {
+int parseLDR(uint16_t *instruction, uint16_t lc) {
 	//Parse the destination register
 	next_token(&token);
-	short dr = parseOperand(token, DR);
+	short dr = parse_operand(token, DR);
 	if (dr == -1) return 1;
 	*instruction = *instruction | dr;
 	free(token);
 
 	//Parse the base register
 	next_token(&token);
-	short baseRegister = parseOperand(token, SRONE);
+	short baseRegister = parse_operand(token, SRONE);
 	if (baseRegister == -1) return 1;
 	*instruction = *instruction | baseRegister;
 	free(token);
@@ -277,49 +277,49 @@ int parseLdr(uint16_t *instruction, uint16_t lc) {
 	return 0;
 }
 
-int parseSt(uint16_t *instruction, uint16_t lc) {
+int parseST(uint16_t *instruction, uint16_t lc) {
 	//Parse the source register
 	next_token(&token);
-	short sr = parseOperand(token, DR);
+	short sr = parse_operand(token, DR);
 	if (sr == -1) return 1;
 	*instruction = *instruction | sr;
 	free(token);
 
 	//Parse the offset
 	next_token(&token);
-	short offset = parsePCOffset(token, lc+1, 9);
+	short offset = parse_PCoffset(token, lc+1, 9);
 	*instruction = *instruction | offset;
 	free(token);
 	return 0;
 }
 
-int parseSti(uint16_t *instruction, uint16_t lc) {
+int parseSTI(uint16_t *instruction, uint16_t lc) {
 	//Parse the source register
 	next_token(&token);
-	short sr = parseOperand(token, DR);
+	short sr = parse_operand(token, DR);
 	if (sr == -1) return 1;
 	*instruction = *instruction | sr;
 	free(token);
 
 	//Parse the offset
 	next_token(&token);
-	short offset = parsePCOffset(token, lc+1, 9);
+	short offset = parse_PCoffset(token, lc+1, 9);
 	*instruction = *instruction | offset;
 	free(token);
 	return 0;
 }
 
-int parseStr(uint16_t *instruction, uint16_t lc) {
+int parseSTR(uint16_t *instruction, uint16_t lc) {
 	//Parse the source register
 	next_token(&token);
-	short sr = parseOperand(token, DR);
+	short sr = parse_operand(token, DR);
 	if (sr == -1) return 1;
 	*instruction = *instruction | sr;
 	free(token);
 
 	//Parse the base register
 	next_token(&token);
-	short baseRegister = parseOperand(token, SRONE);
+	short baseRegister = parse_operand(token, SRONE);
 	if (baseRegister == -1) return 1;
 	*instruction = *instruction | baseRegister;
 	free(token);
@@ -336,40 +336,40 @@ int parseStr(uint16_t *instruction, uint16_t lc) {
 	return 0;
 }
 
-int parseLea(uint16_t *instruction, uint16_t lc) {
+int parseLEA(uint16_t *instruction, uint16_t lc) {
 	//Parse the destination register
 	next_token(&token);
-	short dr = parseOperand(token, DR);
+	short dr = parse_operand(token, DR);
 	if (dr == -1) return 1;
 	*instruction = *instruction | dr;
 	free(token);
 
 	//Parse the offset
 	next_token(&token);
-	short offset = parsePCOffset(token, lc+1, 9);
+	short offset = parse_PCoffset(token, lc+1, 9);
 	*instruction = *instruction | offset;
 	free(token);
 	return 0;
 }
 
-int parseNot(uint16_t* instruction, uint16_t lc) {
+int parseNOT(uint16_t* instruction, uint16_t lc) {
 	//Parse the destination register
 	next_token(&token);
-	short dr = parseOperand(token, DR);
+	short dr = parse_operand(token, DR);
 	if (dr == -1) return 1;
 	*instruction = *instruction | dr;
 	free(token);
 
 	//Parse the operand (source register)
 	next_token(&token);
-	short operand = parseOperand(token, SRONE);
+	short operand = parse_operand(token, SRONE);
 	if (operand == -1) return 1;
 	*instruction = *instruction | operand;
 	free(token);
 	return 0;
 }
 
-int parseTrap(uint16_t *instruction, uint16_t lc) {
+int parseTRAP(uint16_t *instruction, uint16_t lc) {
 	//Parse TRAP Vector
 	next_token(&token);
 	short trapVector = 0;

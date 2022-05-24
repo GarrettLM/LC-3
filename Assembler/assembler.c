@@ -12,13 +12,14 @@ uint16_t instruction;
 FILE *fout;
 char *asmfilename, *objfilename, *symfilename;
 
-//This function is used to output words to the object file
-int writeWord(uint16_t word) {
-	//Words are output in little endian format for compatibility with other LC-3 simulators
+// This function is used to output words to the object file
+int write_word(uint16_t word) {
+	// Words are output in little endian format for compatibility with other LC-3 simulators
 	word = (word << 8) | (word >> 8);
 	return fwrite(&word, sizeof(word), 1, fout);
 }
 
+// A function to process the command line arguments
 void proc_args(int argc, char *argv[]) {
 	if (argc < 2) {
 		printf("Enter the name of the program to assemble in the command line.\n");
@@ -55,7 +56,6 @@ void proc_args(int argc, char *argv[]) {
 		strncpy(symfilename, asmfilename, i);
 		strncpy(symfilename + i, "sym", 4);
 	}
-	printf("%s, %s, %s\n", asmfilename, objfilename, symfilename);
 }
 
 int main(int argc, char *argv[]) {
@@ -142,14 +142,14 @@ int main(int argc, char *argv[]) {
 		} else if (!strcmp(token, "RET") || !strcmp(token, "RTI") || !strcmp(token, "HALT")
 			|| !strcmp(token, "GETC") || !strcmp(token, "OUT") || !strcmp(token, "PUTS")
 			|| !strcmp(token, "IN") || !strcmp(token, "PUTSP")) { location_counter++;
-		} else if (findTableEntry(token) != NULL) {
+		} else if (search_symtable(token) != NULL) {
 			printf("Label %s used more than once!\nAbort!\n", token);
 			//return 1;
-		} else addTableEntry(token, location_counter);
+		} else add_sym_entry(token, location_counter);
 		free(token);
 	}
-	printf("Finished first pass %d\n", line_number);
-	print_symbol_table(symfilename);
+	printf("Finished first pass\n");
+	print_symtable(symfilename);
 
 	reset_tokenizer();
 	fout = fopen(objfilename,"wb");
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
 		exit(1);
 	}
 
-	writeWord(location_counter);
+	write_word(location_counter);
 	free(token);
 
 	while (1) {
@@ -186,9 +186,9 @@ int main(int argc, char *argv[]) {
 				location_counter++;
 				free(token);
 				next_token(&token);
-				ste *temp = findTableEntry(token);
+				ste *temp = search_symtable(token);
 				uint16_t fillvalue = temp != NULL ? temp->address : stringToShort(token+1, token[0]);
-				writeWord(fillvalue);
+				write_word(fillvalue);
 				free(token);
 				continue;
 			} else if (strcmp(token, ".BLKW") == 0) {
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
 				next_token(&token);
 				for (int i = stringToShort(token, '#'); i > 0; i--) {
 					location_counter++;
-					writeWord(0);
+					write_word(0);
 				}
 				free(token);
 				continue;
@@ -210,10 +210,10 @@ int main(int argc, char *argv[]) {
 				size_t length = strlen(token) - 1;
 				for (int i = 1; i < length; i++) {
 					uint16_t temp = (uint16_t) token[i];
-					writeWord(temp);
+					write_word(temp);
 					location_counter++;
 				}
-				writeWord(0);
+				write_word(0);
 				location_counter++;
 				free(token);
 				continue;
@@ -224,7 +224,7 @@ int main(int argc, char *argv[]) {
 				uint16_t instruction = opcode_entry->opcode;
 				if (opcode_entry->parseFunc != NULL)
 					opcode_entry->parseFunc(&instruction, location_counter);
-				writeWord(instruction);
+				write_word(instruction);
 				location_counter++;
 			}
 		}
