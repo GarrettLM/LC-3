@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-void loadFile(uint16_t startAddress, FILE *fin);
-uint16_t getMA(uint16_t mar);
-void setMA(uint16_t mar, uint16_t mdr);
+void load_file(uint16_t startAddress, FILE *fin);
+uint16_t get_mem(uint16_t mar);
+void set_mem(uint16_t mar, uint16_t mdr);
 #endif

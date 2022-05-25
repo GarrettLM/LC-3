@@ -76,8 +76,8 @@ int main(int argc, char *argv[]) {
 	free(token);
 
 	next_token(&token);
-	if (token[0] == '#') location_counter = stringToShort(token+1, '#');
-	else if (token[0] == 'x' || token[0] == 'X') location_counter = stringToShort(token+1, 'x');
+	if (token[0] == '#') location_counter = string_to_uint16(token+1, '#');
+	else if (token[0] == 'x' || token[0] == 'X') location_counter = string_to_uint16(token+1, 'x');
 	else {
 		printf("Error: .ORIG address not formatted properly!\nAbort!\n");
 		exit(1);
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
 			} else if (strcmp(token, ".BLKW") == 0) {
 				free(token);
 				next_token(&token);
-				location_counter += stringToShort(token, '#');
+				location_counter += string_to_uint16(token, '#');
 				free(token);
 				continue;
 			} else if (strcmp(token, ".STRINGZ") == 0) {
@@ -163,8 +163,8 @@ int main(int argc, char *argv[]) {
 	free(token);
 
 	next_token(&token);
-	if (token[0] == '#') location_counter = stringToShort(token+1, '#');
-	else if (token[0] == 'x' || token[0] == 'X') location_counter = stringToShort(token+1, 'x');
+	if (token[0] == '#') location_counter = string_to_uint16(token+1, '#');
+	else if (token[0] == 'x' || token[0] == 'X') location_counter = string_to_uint16(token+1, 'x');
 	else {
 		printf("Error: .ORIG address not formatted properly!\nAbort!\n");
 		exit(1);
@@ -187,14 +187,14 @@ int main(int argc, char *argv[]) {
 				free(token);
 				next_token(&token);
 				ste *temp = search_symtable(token);
-				uint16_t fillvalue = temp != NULL ? temp->address : stringToShort(token+1, token[0]);
+				uint16_t fillvalue = temp != NULL ? temp->address : string_to_uint16(token+1, token[0]);
 				write_word(fillvalue);
 				free(token);
 				continue;
 			} else if (strcmp(token, ".BLKW") == 0) {
 				free(token);
 				next_token(&token);
-				for (int i = stringToShort(token, '#'); i > 0; i--) {
+				for (int i = string_to_uint16(token, '#'); i > 0; i--) {
 					location_counter++;
 					write_word(0);
 				}
