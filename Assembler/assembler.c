@@ -116,33 +116,19 @@ int main(int argc, char *argv[]) {
 				free(token);
 				continue;
 			}
-		} else if (!strcmp(token, "ADD") || !strcmp(token, "AND")
-			|| !strcmp(token, "LDR") || !strcmp(token, "STR")) {
-				free(token);
-				next_token(&token);
-				free(token);
-				next_token(&token);
-				free(token);
-				next_token(&token);
+		} else {
+			opte *opcode_entry = search_optable(token);
+			if (opcode_entry != NULL) {
+				for (uint16_t i = opcode_entry->arguments; i > 0; i--) {
+					free(token);
+					next_token(&token);
+				}
 				location_counter++;
-		} else if (!strcmp(token, "LD") || !strcmp(token, "LDI") || !strcmp(token, "ST")
-			|| !strcmp(token, "STI") || !strcmp(token, "LEA") || !strcmp(token, "NOT")) {
 				free(token);
-				next_token(&token);
-				free(token);
-				next_token(&token);
-				location_counter++;
-		} else if (!strcmp(token, "BRn") || !strcmp(token, "BRz") || !strcmp(token, "BRp")
-			|| !strcmp(token, "BRnz") || !strcmp(token, "BRnp") || !strcmp(token, "BRnzp")
-			|| !strcmp(token, "BR") || !strcmp(token, "JMP") || !strcmp(token, "JSR")
-			|| !strcmp(token, "JSRR") || !strcmp(token, "TRAP")) {
-				free(token);
-				next_token(&token);
-				location_counter++;
-		} else if (!strcmp(token, "RET") || !strcmp(token, "RTI") || !strcmp(token, "HALT")
-			|| !strcmp(token, "GETC") || !strcmp(token, "OUT") || !strcmp(token, "PUTS")
-			|| !strcmp(token, "IN") || !strcmp(token, "PUTSP")) { location_counter++;
-		} else if (search_symtable(token) != NULL) {
+				continue;
+			}
+		}
+		if (search_symtable(token) != NULL) {
 			printf("Label %s used more than once!\nAbort!\n", token);
 			//return 1;
 		} else add_sym_entry(token, location_counter);
