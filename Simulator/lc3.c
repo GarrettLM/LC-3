@@ -84,14 +84,15 @@ int main(int argc, char *argv[]) {
 	printf("Machine initialized\n");
 	FILE *program = fopen(argv[1], "rb");
 	fread(&pc, 2, 1, program);
-	printf("%04x\n", pc);
+	pc = pc << 8 | pc >> 8;
+	//printf("%04x\n", pc);
 	load_file(pc, program);
 	fclose(program);
 	//return 0;
 
 	while (get_mem(0xFFFE) & 0x8000) {
 		//FETCH phase
-		printf("%4x:\t", pc);
+		//printf("%4x:\t", pc);
 		mar = pc;
 		ir = mdr = get_mem(mar);
 		pc++;
@@ -100,15 +101,16 @@ int main(int argc, char *argv[]) {
 		//if (ir == HALT) return 0;
 		uint16_t opcode = ir >> 12;
 		inst_lut[opcode](ir);
-		printf("Press enter to continue\n");
-		getchar();
+		//printf("Press enter to continue\n");
+		//getchar();
 	}
+	printf("\nShutting down LC-3...\n");
 }
 
 void initialize_machine() {
 	FILE *os = fopen("os.obj", "rb");
 	fread(&pc, 2, 1, os);
-	printf("%04x\n", pc);
+	//printf("%04x\n", pc);
 	load_file(pc, os);
 	fclose(os);
 }
@@ -141,20 +143,20 @@ uint16_t sext(uint16_t value, uint16_t size) {
 }
 
 void branch(uint16_t instruction) {
-	printf("Branch\n");
+	//printf("Branch\n");
 	//EVALUATE ADDRESS phase
 	uint16_t address =  pc + sext(instruction & 0x01FF, 9);
-	printf("%x\n", address);
-	printf("%x\n", pc);
-	printf("%x\n", sext(instruction & 0x01FF, 9));
+	//printf("%x\n", address);
+	//printf("%x\n", pc);
+	//printf("%x\n", sext(instruction & 0x01FF, 9));
 	//FETCH OPERAND phase
 	//EXECUTE phase
 	//if any of the conditions are met
 	if ((instruction >> 9) & psr) {
-		printf("Condition to jump met\n");
+		//printf("Condition to jump met\n");
 		pc = address;
 	} else {
-		printf("Condition to jump not met\n");
+		//printf("Condition to jump not met\n");
 	}
 	//STORE RESULT phase
 }
@@ -173,13 +175,13 @@ void add(uint16_t instruction) {
 	//EXECUTE phase
 	c = a + b;
 	set_cond_code(c);
-	printf("%4x + %4x = %4x\n", a, b, c);
+	//printf("%4x + %4x = %4x\n", a, b, c);
 	//STORE RESULT phase
 	r[dr] = c;
 }
 
 void load(uint16_t instruction) {
-	printf("Load\n");
+	//printf("Load\n");
 	//EVALUATE ADDRESS phase
 	uint16_t dr = getDr(instruction);
 	mar = pc + sext(instruction & 0x01FF, 9);
@@ -192,7 +194,7 @@ void load(uint16_t instruction) {
 }
 
 void store(uint16_t instruction) {
-	printf("Store\n");
+	//printf("Store\n");
 	//EVALUATE ADDRESS phase
 	uint16_t sr = getDr(instruction);
 	mar = pc + sext(instruction & 0x01FF, 9);
@@ -204,7 +206,7 @@ void store(uint16_t instruction) {
 }
 
 void jump_subroutine(uint16_t instruction) {
-	printf("jsr\n");
+	//printf("jsr\n");
 	r[7] = pc;
 	if (instruction & 0x800) {
 		pc += (instruction & 0x07FF);
@@ -228,13 +230,13 @@ void and(uint16_t instruction) {
 	//EXECUTE phase
 	c = a & b;
 	set_cond_code(c);
-	printf("%4x & %4x = %4x\n", a, b, c);
+	//printf("%4x & %4x = %4x\n", a, b, c);
 	//STORE RESULT phase
 	r[dr] = c;
 }
 
 void load_relative(uint16_t instruction) {
-	printf("ldr\n");
+	//printf("ldr\n");
 	//EVALUATE ADDRESS phase
 	uint16_t dr = getDr(instruction);
 	uint16_t base = r[getSrOne(instruction)];
@@ -249,7 +251,7 @@ void load_relative(uint16_t instruction) {
 }
 
 void store_relative(uint16_t instruction) {
-	printf("str\n");
+	//printf("str\n");
 	//EVALUATE ADDRESS phase
 	uint16_t sr = getDr(instruction);
 	uint16_t base = r[getSrOne(instruction)];
@@ -288,7 +290,7 @@ void exception_routine(char exceptionVector) {
 }
 
 void not(uint16_t instruction) {
-	printf("not\n");
+	//printf("not\n");
 	//EVALUATE ADDRESS phase
 	uint16_t dr = getDr(instruction);
 	uint16_t sr = getSrOne(instruction);
@@ -302,17 +304,17 @@ void not(uint16_t instruction) {
 }
 
 void load_indirect(uint16_t instruction) {
-	printf("ldi\n");
+	//printf("ldi\n");
 	//EVALUATE ADDRESS phase
 	uint16_t dr = getDr(instruction);
 	mar = pc + sext(instruction & 0x01FF, 9);
-	printf("%x\n", mar);
+	//printf("%x\n", mar);
 	//FETCH OPERAND phase
 	mdr = get_mem(mar);
 	mar = mdr;
-	printf("%x\n", mar);
+	//printf("%x\n", mar);
 	mdr = get_mem(mar);
-	printf("%x\n", mdr);
+	//printf("%x\n", mdr);
 	set_cond_code(mdr);
 	//EXECUTE phase
 	//STORE RESULT phase
@@ -320,22 +322,23 @@ void load_indirect(uint16_t instruction) {
 }
 
 void store_indirect(uint16_t instruction) {
-	printf("sti\n");
+	//printf("sti\n");
 	//EVALUATE ADDRESS phase
 	uint16_t sr = getDr(instruction);
 	mar = pc + sext(instruction & 0x01FF, 9);
 	//FETCH OPERAND phase
 	mdr = get_mem(mar);
 	mar = mdr;
-	mdr = sr;
+	mdr = r[sr];
 	//EXECUTE phase
 	//STORE RESULT phase
+	//printf("MAR: %x MDR: %x\n", mar, mdr);
 	set_mem(mar, mdr);
 }
 
 //This doubles as the RET instruction
 void jmp(uint16_t instruction) {
-	printf("jmp");
+	//printf("jmp");
 	//EVALUATE ADDRESS phase
 	short sr = getSrOne(instruction);
 	//FETCH OPERAND phase
@@ -345,7 +348,7 @@ void jmp(uint16_t instruction) {
 }
 
 void reserved_op(uint16_t instruction) {
-		printf("Error! Use of reserved Opcode!\
+		//printf("Error! Use of reserved Opcode!\
 		Address: %x\nInstruction: %x", (pc-1), instruction);
 		exception_routine(RESERVED_OPCODE_EXCEPTION);
 }
@@ -355,7 +358,7 @@ void load_effective_address(uint16_t instruction) {
 	//EVALUATE ADDRESS phase
 	uint16_t dr = getDr(instruction);
 	uint16_t immediateValue = pc + sext(instruction & 0x01FF, 9);
-	printf("Loading address %4x to R%x\n", immediateValue, dr);
+	//printf("Loading address %4x to R%x\n", immediateValue, dr);
 	//FETCH OPERAND phase
 	set_cond_code(immediateValue);
 	//EXECUTE phase
@@ -371,22 +374,22 @@ void trap(uint16_t instruction) {
 	mdr = get_mem(mar);
 	r[7] = pc;
 	pc = mdr;
-	printf("Performing TRAP 0x%x\n", mar);
+	//printf("Performing TRAP 0x%x\n", mar);
 	//STORE RESULT phase
 }
 
 void set_cond_code(uint16_t result) {
 	psr = psr & 0xFF00;
 	if (result == 0) {
-		printf("Condition code set to z\n");
+		//printf("Condition code set to z\n");
 		psr += 2;
 	} else if (result & 0x8000) {
 		//if the result was negative
-		printf("Condition code set to n\n");
+		//printf("Condition code set to n\n");
 		psr += 4;
 	} else {
 		//if the result was positive
-		printf("Condition code set to p\n");
+		//printf("Condition code set to p\n");
 		psr += 1;
 	}
 }

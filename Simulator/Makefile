@@ -1,7 +1,7 @@
 CC = gcc
 CFlags = -Wall -c
 LDFlags = -lm
-Objs = lc3.o memorymanagementunit.o
+Objs = lc3.o memorymanagementunit.o consoleio.o
 
 all: lc3sim
 
