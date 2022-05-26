@@ -7,10 +7,32 @@
 #include "parser.h"
 
 char *token;
-uint16_t location_counter;
-uint16_t instruction;
-FILE *fout;
+uint16_t lc; // The location counter
 char *asmfilename, *objfilename, *symfilename;
+FILE *fout;
+
+void proc_args(int argc, char *argv[]);
+void pass_one();
+void pass_two();
+
+int main(int argc, char *argv[]) {
+	printf("Starting program\n");
+	proc_args(argc, argv);
+
+	set_input_stream(asmfilename);
+
+	//First pass
+	printf("Starting first pass\n");
+	pass_one();
+	printf("Finished first pass\n");
+	print_symtable(symfilename);
+
+	reset_tokenizer();
+	// Second pass
+	printf("Starting second pass\n");
+	pass_two();
+	printf("Finished second pass\n");
+}
 
 // This function is used to output words to the object file
 int write_word(uint16_t word) {
@@ -58,26 +80,17 @@ void proc_args(int argc, char *argv[]) {
 	}
 }
 
-int main(int argc, char *argv[]) {
-	printf("Starting program\n");
-	proc_args(argc, argv);
-
-	location_counter = 0x3000;
-
-	set_input_stream(asmfilename);
-
-	//First pass
-	printf("Starting first pass\n");
+void pass_one() {
 	next_token(&token);
 	if (strcmp(token, ".ORIG") != 0) {
 		printf("Error: .ORIG not found at the start of the file!\nAbort!\n");
-		return 1;
+		exit(1);
 	}
 	free(token);
 
 	next_token(&token);
-	if (token[0] == '#') location_counter = string_to_uint16(token+1, '#');
-	else if (token[0] == 'x' || token[0] == 'X') location_counter = string_to_uint16(token+1, 'x');
+	if (token[0] == '#') lc = string_to_uint16(token+1, '#');
+	else if (token[0] == 'x' || token[0] == 'X') lc = string_to_uint16(token+1, 'x');
 	else {
 		printf("Error: .ORIG address not formatted properly!\nAbort!\n");
 		exit(1);
@@ -91,10 +104,10 @@ int main(int argc, char *argv[]) {
 		else if (token[0] == '.') {
 			if (strcmp(token, ".ORIG") == 0) {
 				printf("Error: .ORIG pseudo-op used more than once!\nAbort!\n");
-				return 1;
+				exit(1);
 			}
 			if (strcmp(token, ".FILL") == 0) {
-				location_counter++;
+				lc++;
 				free(token);
 				next_token(&token);
 				free(token);
@@ -102,7 +115,7 @@ int main(int argc, char *argv[]) {
 			} else if (strcmp(token, ".BLKW") == 0) {
 				free(token);
 				next_token(&token);
-				location_counter += string_to_uint16(token, '#');
+				lc += string_to_uint16(token, '#');
 				free(token);
 				continue;
 			} else if (strcmp(token, ".STRINGZ") == 0) {
@@ -112,7 +125,7 @@ int main(int argc, char *argv[]) {
 					printf("Error: missing string literal after .STRINGZ\n");
 					exit(1);
 				}
-				location_counter += strlen(token) - 1;
+				lc += strlen(token) - 1;
 				free(token);
 				continue;
 			}
@@ -123,7 +136,7 @@ int main(int argc, char *argv[]) {
 					free(token);
 					next_token(&token);
 				}
-				location_counter++;
+				lc++;
 				free(token);
 				continue;
 			}
@@ -131,32 +144,34 @@ int main(int argc, char *argv[]) {
 		if (search_symtable(token) != NULL) {
 			printf("Label %s used more than once!\nAbort!\n", token);
 			//return 1;
-		} else add_sym_entry(token, location_counter);
+		} else add_sym_entry(token, lc);
 		free(token);
 	}
-	printf("Finished first pass\n");
-	print_symtable(symfilename);
+}
 
-	reset_tokenizer();
+void pass_two() {
 	fout = fopen(objfilename,"wb");
-	// Second pass
-	printf("Starting second pass\n");
+	if (fout == NULL) {
+		printf("Unable to open file: %s\n", objfilename);
+		exit(0);
+	}
+
 	next_token(&token);
 	if (strcmp(token, ".ORIG") != 0) {
 		printf("Error: .ORIG not found at the start of the file!\nAbort!\n");
-		return 1;
+		exit(1);
 	}
 	free(token);
 
 	next_token(&token);
-	if (token[0] == '#') location_counter = string_to_uint16(token+1, '#');
-	else if (token[0] == 'x' || token[0] == 'X') location_counter = string_to_uint16(token+1, 'x');
+	if (token[0] == '#') lc = string_to_uint16(token+1, '#');
+	else if (token[0] == 'x' || token[0] == 'X') lc = string_to_uint16(token+1, 'x');
 	else {
 		printf("Error: .ORIG address not formatted properly!\nAbort!\n");
 		exit(1);
 	}
 
-	write_word(location_counter);
+	write_word(lc);
 	free(token);
 
 	while (1) {
@@ -166,10 +181,10 @@ int main(int argc, char *argv[]) {
 		else if (token[0] == '.') {
 			if (strcmp(token, ".ORIG") == 0) {
 				printf("Error: .ORIG pseudo-op used more than once!\nAbort!\n");
-				return 1;
+				exit(1);
 			}
 			if (strcmp(token, ".FILL") == 0) {
-				location_counter++;
+				lc++;
 				free(token);
 				next_token(&token);
 				ste *temp = search_symtable(token);
@@ -181,7 +196,7 @@ int main(int argc, char *argv[]) {
 				free(token);
 				next_token(&token);
 				for (int i = string_to_uint16(token, '#'); i > 0; i--) {
-					location_counter++;
+					lc++;
 					write_word(0);
 				}
 				free(token);
@@ -197,10 +212,10 @@ int main(int argc, char *argv[]) {
 				for (int i = 1; i < length; i++) {
 					uint16_t temp = (uint16_t) token[i];
 					write_word(temp);
-					location_counter++;
+					lc++;
 				}
 				write_word(0);
-				location_counter++;
+				lc++;
 				free(token);
 				continue;
 			}
@@ -209,13 +224,12 @@ int main(int argc, char *argv[]) {
 			if (opcode_entry != NULL) {
 				uint16_t instruction = opcode_entry->opcode;
 				if (opcode_entry->parseFunc != NULL)
-					opcode_entry->parseFunc(&instruction, location_counter);
+					opcode_entry->parseFunc(&instruction, lc);
 				write_word(instruction);
-				location_counter++;
+				lc++;
 			}
 		}
 		free(token);
 	}
-	printf("Finished second pass\n");
 	fclose(fout);
 }
