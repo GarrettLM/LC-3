@@ -72,7 +72,7 @@ int next_token(char **returnstr) {
 	//Length of the token
 	size_t toklen = end - start;
 	//Copy the string the the buffer to the return string
-	*returnstr = malloc((toklen + 1) * sizeof(char));
+	*returnstr = realloc(*returnstr, (toklen + 1) * sizeof(char));
 	if (*returnstr == NULL) return 0;
 	strncpy(*returnstr, start, toklen);
 	(*returnstr)[toklen] = '\0';

@@ -139,19 +139,16 @@ int parse_add(uint16_t *instruction, uint16_t lc) {
 	*instruction = *instruction | dr;
 
 	//Parse the first operand (source register one)
-	free(token);
 	next_token(&token);
 	uint16_t operandOne = parse_operand(token, SRONE);
 	if (operandOne == -1) return 1;
 	*instruction = *instruction | operandOne;
 
 	//Parse the second operand
-	free(token);
 	next_token(&token);
 	uint16_t operandTwo = parse_operand(token, OPERAND_TWO);
 	if (operandTwo == -1) return 1;
 	*instruction = *instruction | operandTwo;
-	free(token);
 	return 0;
 }
 
@@ -161,7 +158,6 @@ int parse_br(uint16_t *instruction, uint16_t lc) {
 	uint16_t offset = parse_pc_offset(token, lc+1, 9);
 	if (offset == -1) return 1;
 	*instruction = *instruction | offset;
-	free(token);
 	return 0;
 }
 
@@ -171,7 +167,6 @@ int parse_jmp(uint16_t *instruction, uint16_t lc) {
 	uint16_t baseRegister = parse_operand(token, SRONE);
 	if (baseRegister == -1) return 1;
 	*instruction = *instruction | baseRegister;
-	free(token);
 	return 0;
 }
 
@@ -180,7 +175,6 @@ int parse_jsr(uint16_t *instruction, uint16_t lc) {
 	next_token(&token);
 	uint16_t offset = parse_pc_offset(token, lc+1, 11);
 	*instruction = *instruction | offset;
-	free(token);
 	return 0;
 }
 
@@ -192,11 +186,9 @@ int parse_ld(uint16_t *instruction, uint16_t lc) {
 	*instruction = *instruction | dr;
 
 	//Parse the offset
-	free(token);
 	next_token(&token);
 	uint16_t offset = parse_pc_offset(token, lc+1, 9);
 	*instruction = *instruction | offset;
-	free(token);
 	return 0;
 }
 
@@ -206,14 +198,12 @@ int parse_ldr(uint16_t *instruction, uint16_t lc) {
 	uint16_t dr = parse_operand(token, DR);
 	if (dr == -1) return 1;
 	*instruction = *instruction | dr;
-	free(token);
 
 	//Parse the base register
 	next_token(&token);
 	uint16_t baseRegister = parse_operand(token, SRONE);
 	if (baseRegister == -1) return 1;
 	*instruction = *instruction | baseRegister;
-	free(token);
 
 	//Parse the offset
 	next_token(&token);
@@ -223,7 +213,6 @@ int parse_ldr(uint16_t *instruction, uint16_t lc) {
 		return 1;
 	}
 	*instruction = *instruction | offset;
-	free(token);
 	return 0;
 }
 
@@ -233,14 +222,12 @@ int parse_not(uint16_t* instruction, uint16_t lc) {
 	uint16_t dr = parse_operand(token, DR);
 	if (dr == -1) return 1;
 	*instruction = *instruction | dr;
-	free(token);
 
 	//Parse the operand (source register)
 	next_token(&token);
 	uint16_t operand = parse_operand(token, SRONE);
 	if (operand == -1) return 1;
 	*instruction = *instruction | operand;
-	free(token);
 	return 0;
 }
 
@@ -252,6 +239,5 @@ int parse_trap(uint16_t *instruction, uint16_t lc) {
 	else if (token[0] == 'x' || token[0] == 'X') trapVector = string_to_uint16(token+1, 'x');
 	if (trapVector > 0xFF) return 1;
 	*instruction = *instruction | trapVector;
-	free(token);
 	return 0;
 }

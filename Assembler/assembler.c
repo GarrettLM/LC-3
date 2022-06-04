@@ -6,7 +6,7 @@
 #include "opcodetable.h"
 #include "parser.h"
 
-char *token;
+char *token = NULL;
 uint16_t lc; // The location counter
 char *asmfilename, *objfilename, *symfilename;
 FILE *fout;
@@ -86,7 +86,6 @@ void pass_one() {
 		printf("Error: .ORIG not found at the start of the file!\nAbort!\n");
 		exit(1);
 	}
-	free(token);
 
 	next_token(&token);
 	if (token[0] == '#') lc = string_to_uint16(token+1, '#');
@@ -95,7 +94,6 @@ void pass_one() {
 		printf("Error: .ORIG address not formatted properly!\nAbort!\n");
 		exit(1);
 	}
-	free(token);
 
 	while (1) {
 		next_token(&token);
@@ -108,36 +106,28 @@ void pass_one() {
 			}
 			if (strcmp(token, ".FILL") == 0) {
 				lc++;
-				free(token);
 				next_token(&token);
-				free(token);
 				continue;
 			} else if (strcmp(token, ".BLKW") == 0) {
-				free(token);
 				next_token(&token);
 				lc += string_to_uint16(token, '#');
-				free(token);
 				continue;
 			} else if (strcmp(token, ".STRINGZ") == 0) {
-				free(token);
 				next_token(&token);
 				if (token[0] != '\"') {
 					printf("Error: missing string literal after .STRINGZ\n");
 					exit(1);
 				}
 				lc += strlen(token) - 1;
-				free(token);
 				continue;
 			}
 		} else {
 			opte *opcode_entry = search_optable(token);
 			if (opcode_entry != NULL) {
 				for (uint16_t i = opcode_entry->arguments; i > 0; i--) {
-					free(token);
 					next_token(&token);
 				}
 				lc++;
-				free(token);
 				continue;
 			}
 		}
@@ -145,7 +135,6 @@ void pass_one() {
 			printf("Label %s used more than once!\nAbort!\n", token);
 			//return 1;
 		} else add_sym_entry(token, lc);
-		free(token);
 	}
 }
 
@@ -161,7 +150,6 @@ void pass_two() {
 		printf("Error: .ORIG not found at the start of the file!\nAbort!\n");
 		exit(1);
 	}
-	free(token);
 
 	next_token(&token);
 	if (token[0] == '#') lc = string_to_uint16(token+1, '#');
@@ -172,7 +160,6 @@ void pass_two() {
 	}
 
 	write_word(lc);
-	free(token);
 
 	while (1) {
 		next_token(&token);
@@ -185,24 +172,19 @@ void pass_two() {
 			}
 			if (strcmp(token, ".FILL") == 0) {
 				lc++;
-				free(token);
 				next_token(&token);
 				ste *temp = search_symtable(token);
 				uint16_t fillvalue = temp != NULL ? temp->address : string_to_uint16(token+1, token[0]);
 				write_word(fillvalue);
-				free(token);
 				continue;
 			} else if (strcmp(token, ".BLKW") == 0) {
-				free(token);
 				next_token(&token);
 				for (int i = string_to_uint16(token, '#'); i > 0; i--) {
 					lc++;
 					write_word(0);
 				}
-				free(token);
 				continue;
 			} else if (strcmp(token, ".STRINGZ") == 0) {
-				free(token);
 				next_token(&token);
 				if (token[0] != '\"') {
 					printf("Error: missing string literal after .STRINGZ\n");
@@ -216,7 +198,6 @@ void pass_two() {
 				}
 				write_word(0);
 				lc++;
-				free(token);
 				continue;
 			}
 		} else {
@@ -229,7 +210,6 @@ void pass_two() {
 				lc++;
 			}
 		}
-		free(token);
 	}
 	fclose(fout);
 }

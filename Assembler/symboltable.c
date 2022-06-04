@@ -16,7 +16,7 @@ ste *search_symtable(char *symbol) {
 int add_sym_entry(char *symbol, uint16_t address) {
 	if (table_ptr == TABLE_SIZE) return -1;
 	symbolTable[table_ptr].address = address;
-	size_t symlen = strchr(symbol, ':') ? strlen(symbol) : strlen(symbol) + 1;
+	size_t symlen = strlen(symbol) + 1;
 	symbolTable[table_ptr].symbol = malloc(symlen);
 	strncpy(symbolTable[table_ptr].symbol, symbol, symlen);
 	table_ptr++;
