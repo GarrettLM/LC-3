@@ -3,7 +3,7 @@
 #include <string.h>
 #include "tokenizer.h"
 
-#define BUFFER_SIZE 8000
+#define BUFFER_SIZE 800
 
 static FILE *stream = NULL;
 static char buffer[BUFFER_SIZE] ="";
