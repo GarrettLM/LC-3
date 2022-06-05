@@ -3,7 +3,7 @@
 #include <string.h>
 #include "tokenizer.h"
 
-#define BUFFER_SIZE 800
+#define BUFFER_SIZE 8000
 
 static FILE *stream = NULL;
 static char buffer[BUFFER_SIZE] ="";
@@ -51,15 +51,17 @@ int next_token(char **returnstr) {
 		}
 	}
 	//Find the end of the token
-	end = start;
+	end = start + 1;
+	int slashes = 0;
 	if (*start == '\"') {
 		do {
 			if (*end == '\n') line_number++;
+			else if (*end == '\\' && *(end-1) != '\\') slashes++;
 			end++;
 			if (end - buffer == BUFFER_SIZE) {
 				read_helper(end - start);
 			}
-		} while (*end != '\"' && *(end-1) != '\\');
+		} while (*end != '\"' || *(end-1) == '\\');
 		end++;
 	} else {
 		do {
@@ -70,13 +72,37 @@ int next_token(char **returnstr) {
 		} while (!(is_blank(*end)));
 	}
 	//Length of the token
-	size_t toklen = end - start;
+	size_t toklen = end - (start + slashes);
 	//Copy the string the the buffer to the return string
 	*returnstr = realloc(*returnstr, (toklen + 1) * sizeof(char));
 	if (*returnstr == NULL) return 0;
-	strncpy(*returnstr, start, toklen);
-	(*returnstr)[toklen] = '\0';
-	start = end;
+	if (slashes) {
+		for (int i = 0; i < toklen; i++, start++) {
+			if (*start == '\\') {
+				switch (*(++start)) {
+					case 'n':
+						(*returnstr)[i] = '\n';
+						break;
+					case 't':
+						(*returnstr)[i] = '\t';
+						break;
+					case '\"':
+						(*returnstr)[i] = '\"';
+						break;
+					case '\\':
+						(*returnstr)[i] = '\\';
+						break;
+				}
+			} else {
+				(*returnstr)[i] = *start;
+			}
+		}
+		(*returnstr)[toklen] = '\0';
+	} else {
+		strncpy(*returnstr, start, toklen);
+		(*returnstr)[toklen] = '\0';
+		start = end;
+	}
 	return strlen(*returnstr);
 }
 
